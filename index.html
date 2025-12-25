@@ -1,15 +1,14 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>Coin Logic</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <!-- React CDN -->
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
-
 <style>
 body{
   margin:0;
@@ -21,13 +20,73 @@ body{
   margin:auto;
   padding:16px;
 }
-h2{text-align:center}
+h2{
+  text-align:center;
+  color:#2c3e50;
+}
 
+/* Loading Animation */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  gap: 20px;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #e0e0e0;
+  border-top: 5px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Level Grid with connected design */
 .level-grid{
   display:grid;
   grid-template-columns:repeat(3,1fr);
   gap:12px;
+  position: relative;
 }
+
+.level-grid::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 16.666%;
+  right: 16.666%;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    rgba(52, 152, 219, 0.3) 0%, 
+    rgba(52, 152, 219, 0.6) 50%, 
+    rgba(52, 152, 219, 0.3) 100%);
+  z-index: 1;
+  transform: translateY(-50%);
+}
+
+.level-grid::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 16.666%;
+  bottom: 16.666%;
+  width: 2px;
+  background: linear-gradient(180deg, 
+    rgba(52, 152, 219, 0.3) 0%, 
+    rgba(52, 152, 219, 0.6) 50%, 
+    rgba(52, 152, 219, 0.3) 100%);
+  z-index: 1;
+  transform: translateX(-50%);
+}
+
 .level{
   background:#fff;
   border-radius:14px;
@@ -36,17 +95,61 @@ h2{text-align:center}
   box-shadow:0 4px 12px rgba(0,0,0,.1);
   position:relative;
   cursor:pointer;
+  transition: all 0.3s ease;
+  z-index: 2;
+  border: 2px solid #e0e0e0;
 }
+
+.level:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,.15);
+  border-color: #3498db;
+}
+
+.level::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border: 2px solid transparent;
+  border-radius: 16px;
+  background: linear-gradient(45deg, #3498db, #2ecc71) border-box;
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) padding-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.level:hover::before {
+  opacity: 0.5;
+}
+
 .locked{
   opacity:.4;
   pointer-events:none;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
 }
+
 .stars{
   position:absolute;
   top:6px;
   right:6px;
   font-size:14px;
+  color: #f1c40f;
 }
+
+.level-number {
+  font-size: 18px;
+  font-weight: bold;
+  color: #2c3e50;
+  margin-bottom: 4px;
+}
+
 .game{
   background:#fff;
   border-radius:16px;
@@ -67,13 +170,15 @@ h2{text-align:center}
 }
 .bar{
   height:100%;
-  background:#ffc107;
+  background:linear-gradient(90deg, #2ecc71, #3498db);
   width:0%;
+  transition: width 0.5s ease;
 }
 .amount{
   text-align:center;
   font-size:32px;
   margin:10px 0;
+  color: #2c3e50;
 }
 .coins{
   display:grid;
@@ -81,12 +186,23 @@ h2{text-align:center}
   gap:10px;
 }
 .coin{
-  background:#e3f2fd;
+  background:linear-gradient(135deg, #e3f2fd, #bbdefb);
   padding:14px;
   border-radius:12px;
   text-align:center;
   cursor:pointer;
+  font-weight:bold;
+  font-size:16px;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
 }
+
+.coin:hover {
+  transform: scale(1.05);
+  border-color: #3498db;
+  background: linear-gradient(135deg, #bbdefb, #90caf9);
+}
+
 .footer{
   display:flex;
   gap:8px;
@@ -94,124 +210,286 @@ h2{text-align:center}
 }
 button{
   flex:1;
-  padding:10px;
+  padding:12px;
   border:none;
   border-radius:10px;
+  font-weight:bold;
+  cursor:pointer;
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* Custom Popup Styles */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.popup {
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  max-width: 300px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.popup h3 {
+  margin: 0 0 15px 0;
+  color: #2c3e50;
+  font-size: 24px;
+}
+
+.popup-message {
+  font-size: 16px;
+  color: #555;
+  margin-bottom: 25px;
+  line-height: 1.5;
+}
+
+.popup-stars {
+  font-size: 32px;
+  color: #f1c40f;
+  margin-bottom: 20px;
+  animation: starPulse 1s ease infinite;
+}
+
+@keyframes starPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.popup-button {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 50px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.popup-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+}
+
+/* Success and Failure Colors */
+.success .popup {
+  border-top: 5px solid #2ecc71;
+}
+
+.failure .popup {
+  border-top: 5px solid #e74c3c;
+}
+
+.failure .popup-button {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
 }
 </style>
 </head>
-
 <body>
 <div id="root"></div>
-
 <script type="text/babel">
 
-function App(){
-  const [levels,setLevels]=React.useState([]);
-  const [screen,setScreen]=React.useState("home");
-  const [current,setCurrent]=React.useState(null);
-
-  const progress = JSON.parse(localStorage.getItem("progress") || "{}");
-
-  React.useEffect(()=>{
-    fetch("math.json")
-      .then(res=>res.json())
-      .then(data=>setLevels(data.levels));
-  },[]);
-
-  function startLevel(lvl){
-    setCurrent({
-      ...lvl,
-      amount:0,
-      movesLeft:lvl.moves
-    });
-    setScreen("game");
-  }
-
-  function saveStars(id,stars){
-    progress[id]=Math.max(progress[id]||0,stars);
-    localStorage.setItem("progress",JSON.stringify(progress));
-  }
-
-  if(screen==="home"){
-    return(
-      <div className="app">
-        <h2>🪙 Coin Logic</h2>
-        <div className="level-grid">
-          {levels.map((l,i)=>{
-            const unlocked = i===0 || progress[levels[i-1].id];
-            return(
-              <div key={l.id}
-                className={`level ${!unlocked?"locked":""}`}
-                onClick={()=>startLevel(l)}>
-                <div>Level {l.id}</div>
-                <div className="stars">
-                  {"⭐".repeat(progress[l.id]||0)}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-    )
-  }
-
-  const used = current.moves - current.movesLeft;
-  const starPercent = (used/current.moves)*100;
-
-  function tapCoin(val){
-    if(current.movesLeft<=0) return;
-
-    const amt = current.amount + val;
-    const movesLeft = current.movesLeft -1;
-
-    const updated={...current,amount:amt,movesLeft};
-    setCurrent(updated);
-
-    if(amt===current.target){
-      const stars = movesLeft>=2?3:movesLeft===1?2:1;
-      saveStars(current.id,stars);
-      alert(`Level Complete ⭐${stars}`);
-      setScreen("home");
-    }
-    if(movesLeft===0 && amt!==current.target){
-      alert("Failed!");
-      setScreen("home");
-    }
-  }
-
-  return(
-    <div className="app">
-      <div className="game">
-        <div className="top">
-          <div>Target ₹{current.target}</div>
-          <div>Moves {current.movesLeft}</div>
-        </div>
-
-        <div className="progress">
-          <div className="bar" style={{width:`${100-starPercent}%`}}></div>
-        </div>
-
-        <div className="amount">₹{current.amount}</div>
-
-        <div className="coins">
-          {current.coins.map((c,i)=>(
-            <div key={i} className="coin" onClick={()=>tapCoin(c)}>
-              +{c}
-            </div>
-          ))}
-        </div>
-
-        <div className="footer">
-          <button onClick={()=>setScreen("home")}>Exit</button>
-        </div>
+function Popup({ type, message, stars, onClose }) {
+  const isSuccess = type === 'success';
+  
+  return (
+    <div className={`popup-overlay ${isSuccess ? 'success' : 'failure'}`}>
+      <div className="popup">
+        <h3>{isSuccess ? '🎉 Level Complete!' : '😔 Failed!'}</h3>
+        {stars > 0 && (
+          <div className="popup-stars">
+            {"⭐".repeat(stars)}
+          </div>
+        )}
+        <div className="popup-message">{message}</div>
+        <button className="popup-button" onClick={onClose}>
+          {isSuccess ? 'Continue' : 'Try Again'}
+        </button>
       </div>
     </div>
-  )
+  );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+function App(){  
+  const [levels,setLevels]=React.useState([]);  
+  const [screen,setScreen]=React.useState("home");  
+  const [current,setCurrent]=React.useState(null);  
+  const [loading, setLoading] = React.useState(true);
+  const [popup, setPopup] = React.useState(null);
+  
+  const progress = JSON.parse(localStorage.getItem("progress") || "{}");  
+  
+  React.useEffect(()=>{  
+    // Simulate loading delay
+    setTimeout(() => {
+      fetch("math.json")  
+        .then(res=>res.json())  
+        .then(data=>{
+          setLevels(data.levels);
+          setLoading(false);
+        })
+        .catch(error => {
+          console.error('Error loading levels:', error);
+          setLoading(false);
+        });  
+    }, 1000);
+  },[]);  
+  
+  function startLevel(lvl){  
+    setCurrent({  
+      ...lvl,  
+      amount:0,  
+      movesLeft:lvl.moves  
+    });  
+    setScreen("game");  
+  }  
+  
+  function saveStars(id,stars){  
+    progress[id]=Math.max(progress[id]||0,stars);  
+    localStorage.setItem("progress",JSON.stringify(progress));  
+  }  
+  
+  function showPopup(type, message, stars = 0) {
+    setPopup({ type, message, stars });
+  }
+  
+  function closePopup() {
+    setPopup(null);
+    if (popup?.type === 'success') {
+      setScreen("home");
+    } else if (popup?.type === 'failure') {
+      setScreen("home");
+    }
+  }
 
-</script>
-</body>
-</html>
+  if(loading){  
+    return(  
+      <div className="app">  
+        <h2>🪙 Coin Logic</h2>  
+        <div className="loading-container">
+          <div className="spinner"></div>
+          <div>Loading levels...</div>
+        </div>
+      </div>  
+    )  
+  }
+
+  if(screen==="home"){  
+    return(  
+      <div className="app">  
+        <h2>🪙 Coin Logic</h2>  
+        <div className="level-grid">  
+          {levels.map((l,i)=>{  
+            const unlocked = i===0 || progress[levels[i-1].id];  
+            return(  
+              <div key={l.id}  
+                className={`level ${!unlocked?"locked":""}`}  
+                onClick={()=>startLevel(l)}>  
+                <div className="level-number">Level {l.id}</div>  
+                <div className="stars">  
+                  {"⭐".repeat(progress[l.id]||0)}  
+                </div>  
+              </div>  
+            )  
+          })}  
+        </div>  
+        {popup && <Popup {...popup} onClose={closePopup} />}
+      </div>  
+    )  
+  }  
+  
+  const used = current.moves - current.movesLeft;  
+  const starPercent = (used/current.moves)*100;  
+  
+  function tapCoin(val){  
+    if(current.movesLeft<=0) return;  
+  
+    const amt = current.amount + val;  
+    const movesLeft = current.movesLeft -1;  
+  
+    const updated={...current,amount:amt,movesLeft};  
+    setCurrent(updated);  
+  
+    if(amt===current.target){  
+      const stars = movesLeft>=2?3:movesLeft===1?2:1;  
+      saveStars(current.id,stars);  
+      showPopup('success', `Perfect! You completed the level with ${movesLeft} move${movesLeft !== 1 ? 's' : ''} left!`, stars);
+    }  
+    if(movesLeft===0 && amt!==current.target){  
+      showPopup('failure', `You ran out of moves! Target was ₹${current.target}, you got ₹${amt}.`);
+    }  
+  }  
+  
+  return(  
+    <div className="app">  
+      <div className="game">  
+        <div className="top">  
+          <div>Target ₹{current.target}</div>  
+          <div>Moves {current.movesLeft}</div>  
+        </div>  
+  
+        <div className="progress">  
+          <div className="bar" style={{width:`${100-starPercent}%`}}></div>  
+        </div>  
+  
+        <div className="amount">₹{current.amount}</div>  
+  
+        <div className="coins">  
+          {current.coins.map((c,i)=>(  
+            <div key={i} className="coin" onClick={()=>tapCoin(c)}>  
+              +{c}  
+            </div>  
+          ))}  
+        </div>  
+  
+        <div className="footer">  
+          <button onClick={()=>setScreen("home")}>Exit</button>  
+        </div>  
+      </div>  
+      {popup && <Popup {...popup} onClose={closePopup} />}
+    </div>  
+  )  
+}  
+  
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);  
+  
+</script>  
+</body>  
+  </html>
