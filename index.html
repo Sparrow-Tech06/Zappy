@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Coin Logic</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+<style>
+body{
+  background:#f4f6fb;
+}
+.app{
+  max-width:420px;
+  margin:auto;
+  padding:16px;
+}
+.level-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+}
+.level{
+  background:#fff;
+  border-radius:14px;
+  padding:16px;
+  text-align:center;
+  box-shadow:0 4px 12px rgba(0,0,0,.1);
+  cursor:pointer;
+}
+.level.locked{
+  opacity:.4;
+  pointer-events:none;
+}
+
+/* Skeleton */
+.skeleton{
+  height:70px;
+  background:linear-gradient(90deg,#eee,#f5f5f5,#eee);
+  background-size:200% 100%;
+  animation:shimmer 1.2s infinite;
+  border-radius:14px;
+}
+@keyframes shimmer{
+  from{background-position:200% 0}
+  to{background-position:-200% 0}
+}
+
+/* Game */
+.game{
+  background:#fff;
+  border-radius:16px;
+  padding:16px;
+  box-shadow:0 8px 20px rgba(0,0,0,.15);
+}
+.coin{
+  background:#e3f2fd;
+  border-radius:12px;
+  padding:14px;
+  text-align:center;
+  cursor:pointer;
+  font-weight:bold;
+}
+.amount{
+  font-size:32px;
+  text-align:center;
+}
+.progress{
+  height:6px;
+}
+.modal-backdrop{
+  opacity:.6;
+}
+</style>
+</head>
+
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+
+function App(){
+
+  const [levels,setLevels]=React.useState([]);
+  const [screen,setScreen]=React.useState("home");
+  const [current,setCurrent]=React.useState(null);
+  const [popup,setPopup]=React.useState(null);
+
+  const progress = JSON.parse(localStorage.getItem("progress")||"{}");
+
+  React.useEffect(()=>{
+    fetch("math.json")
+      .then(res=>res.json())
+      .then(data=>setLevels(data.levels));
+  },[]);
+
+  function startLevel(lvl){
+    setCurrent({...lvl,amount:0,movesLeft:lvl.moves});
+    setScreen("game");
+  }
+
+  function saveStars(id,stars){
+    progress[id]=Math.max(progress[id]||0,stars);
+    localStorage.setItem("progress",JSON.stringify(progress));
+  }
+
+  function tapCoin(val){
+    if(current.movesLeft<=0 || popup) return;
+
+    const amt=current.amount+val;
+    const movesLeft=current.movesLeft-1;
+    const updated={...current,amount:amt,movesLeft};
+    setCurrent(updated);
+
+    if(amt===current.target){
+      const stars = movesLeft>=2?3:movesLeft===1?2:1;
+      saveStars(current.id,stars);
+      setPopup({type:"win",stars});
+    }else if(movesLeft===0){
+      setPopup({type:"fail"});
+    }
+  }
+
+  function nextLevel(){
+    const idx = levels.findIndex(l=>l.id===current.id);
+    if(levels[idx+1]){
+      startLevel(levels[idx+1]);
+      setPopup(null);
+    }else{
+      setPopup(null);
+      setScreen("home");
+    }
+  }
+
+  if(screen==="home"){
+    return(
+      <div className="app">
+        <h3 className="text-center mb-3">🪙 Coin Logic</h3>
+
+        <div className="level-grid">
+          {levels.length===0 ?
+            [...Array(6)].map((_,i)=><div key={i} className="skeleton"></div>)
+          :
+            levels.map((l,i)=>{
+              const unlocked=i===0||progress[levels[i-1].id];
+              return(
+                <div key={l.id}
+                  className={`level ${!unlocked?"locked":""}`}
+                  onClick={()=>startLevel(l)}>
+                  <div>Level {l.id}</div>
+                  <small>{"⭐".repeat(progress[l.id]||0)}</small>
+                </div>
+              )
+            })
+          }
+        </div>
+      </div>
+    )
+  }
+
+  const used=current.moves-current.movesLeft;
+  const percent=(used/current.moves)*100;
+
+  return(
+    <div className="app">
+      <div className="game">
+        <div className="d-flex justify-content-between fw-bold">
+          <span>Target ₹{current.target}</span>
+          <span>Moves {current.movesLeft}</span>
+        </div>
+
+        <div className="progress my-2">
+          <div className="progress-bar bg-warning" style={{width:`${100-percent}%`}}></div>
+        </div>
+
+        <div className="amount my-3">₹{current.amount}</div>
+
+        <div className="row g-2">
+          {current.coins.map((c,i)=>(
+            <div key={i} className="col-4">
+              <div className="coin" onClick={()=>tapCoin(c)}>+{c}</div>
+            </div>
+          ))}
+        </div>
+
+        <button className="btn btn-secondary w-100 mt-3" onClick={()=>setScreen("home")}>Exit</button>
+      </div>
+
+      {popup && (
+        <>
+        <div className="modal-backdrop show"></div>
+        <div className="modal show d-block">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content rounded-4 text-center p-3">
+              {popup.type==="win" ? (
+                <>
+                  <h5>🎉 Level Complete</h5>
+                  <p>You earned {popup.stars} ⭐</p>
+                  <button className="btn btn-success w-100 mb-2" onClick={nextLevel}>
+                    Next Level
+                  </button>
+                  <button className="btn btn-outline-secondary w-100"
+                    onClick={()=>{setPopup(null);setScreen("home")}}>
+                    Home
+                  </button>
+                </>
+              ):(
+                <>
+                  <h5>😢 Level Failed</h5>
+                  <p>Try again</p>
+                  <button className="btn btn-warning w-100 mb-2"
+                    onClick={()=>{setPopup(null);startLevel(current)}}>
+                    Retry
+                  </button>
+                  <button className="btn btn-outline-secondary w-100"
+                    onClick={()=>{setPopup(null);setScreen("home")}}>
+                    Home
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
