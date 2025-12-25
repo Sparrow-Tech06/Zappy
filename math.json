@@ -1,0 +1,28 @@
+{
+  "levels": [
+    {
+      "id": 1,
+      "target": 30,
+      "moves": 3,
+      "coins": [10, 20]
+    },
+    {
+      "id": 2,
+      "target": 70,
+      "moves": 4,
+      "coins": [10, 20, 50]
+    },
+    {
+      "id": 3,
+      "target": 120,
+      "moves": 3,
+      "coins": [10, 20, 50]
+    },
+    {
+      "id": 4,
+      "target": 100,
+      "moves": 2,
+      "coins": [20, 50]
+    }
+  ]
+}
