@@ -1,11 +1,6 @@
 {
   "levels": [
-    {
-      "id": 1,
-      "target": 30,
-      "moves": 3,
-      "coins": [10, 20]
-    },
+    { "id": 1, "target": 30, "moves": 3, "coins": [10, 20] },
     {
       "id": 2,
       "target": 70,
