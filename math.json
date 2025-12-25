@@ -27,7 +27,7 @@
      { "id": 26, "target": 990, "moves": 7, "coins": [10, 20, 50, 100] }, 
      { "id": 27, "target": 800, "moves": 6, "coins": [10, 20, 50, 100] }, 
      { "id": 28, "target": 650, "moves": 5, "coins": [10, 20, 50, 100] }, 
-     { "id": 29, "target": 510, "moves": 4, "coins": [10, 20, 50] }, 
-     { "id": 30, "target": 345, "moves": 3, "coins": [10, 20, 50] } 
+     { "id": 29, "target": 510, "moves": 4, "coins": [10, 20, 50] }
+     
    
  ] }
