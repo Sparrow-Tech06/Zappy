@@ -12,8 +12,24 @@
 <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 
 <style>
+  :root{
+  --primary:#5f7cff;
+  --primary-dark:#4a63e7;
+  --locked:#d7def3;
+  --bg:#f4f6ff;
+  --text:#1e2a4a;
+}
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  user-select:none;
+}
+
 body{
-  background:#fff;
+  background:var(--bg);
+  padding:16px;
 }
 
 /* Layout */
@@ -30,12 +46,13 @@ body{
   gap:12px;
 }
 .level{
-  background: #5A7ACD ;
+  background: #5f7cff ;
+  box-shadow:0 10px 20px rgba(95,124,255,.35);
   color: #fff ;
   padding:16px;
   text-align:center;
-  aspect-ratio: 1; 
-  clip-path: polygon(100% 50%,90.45% 79.39%,65.45% 97.55%,34.55% 97.55%,9.55% 79.39%,0% 50%,9.55% 20.61%,34.55% 2.45%,65.45% 2.45%,90.45% 20.61%);
+  aspect-ratio: 1/1; 
+  clip-path: polygon( 30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30% );
   cursor:pointer;
   transition:.3s ease;
 }
@@ -43,8 +60,10 @@ body{
   transform:translateY(-4px);
 }
 .level.locked{
-  opacity:.4;
-  pointer-events:none;
+  background:var(--locked);
+  color:#8e9ac5;
+  box-shadow:none;
+  cursor:not-allowed;
 }
 
 /* Skeleton */
