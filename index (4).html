@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Coin Logic</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- React CDN -->
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  background:#f3f6fb;
+}
+.app{
+  max-width:420px;
+  margin:auto;
+  padding:16px;
+}
+h2{text-align:center}
+
+.level-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+}
+.level{
+  background:#fff;
+  border-radius:14px;
+  padding:14px;
+  text-align:center;
+  box-shadow:0 4px 12px rgba(0,0,0,.1);
+  position:relative;
+  cursor:pointer;
+}
+.locked{
+  opacity:.4;
+  pointer-events:none;
+}
+.stars{
+  position:absolute;
+  top:6px;
+  right:6px;
+  font-size:14px;
+}
+.game{
+  background:#fff;
+  border-radius:16px;
+  padding:16px;
+  box-shadow:0 8px 20px rgba(0,0,0,.15);
+}
+.top{
+  display:flex;
+  justify-content:space-between;
+  font-weight:bold;
+}
+.progress{
+  height:6px;
+  background:#ddd;
+  border-radius:6px;
+  overflow:hidden;
+  margin:8px 0;
+}
+.bar{
+  height:100%;
+  background:#ffc107;
+  width:0%;
+}
+.amount{
+  text-align:center;
+  font-size:32px;
+  margin:10px 0;
+}
+.coins{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+}
+.coin{
+  background:#e3f2fd;
+  padding:14px;
+  border-radius:12px;
+  text-align:center;
+  cursor:pointer;
+}
+.footer{
+  display:flex;
+  gap:8px;
+  margin-top:12px;
+}
+button{
+  flex:1;
+  padding:10px;
+  border:none;
+  border-radius:10px;
+}
+</style>
+</head>
+
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+
+function App(){
+  const [levels,setLevels]=React.useState([]);
+  const [screen,setScreen]=React.useState("home");
+  const [current,setCurrent]=React.useState(null);
+
+  const progress = JSON.parse(localStorage.getItem("progress") || "{}");
+
+  React.useEffect(()=>{
+    fetch("math.json")
+      .then(res=>res.json())
+      .then(data=>setLevels(data.levels));
+  },[]);
+
+  function startLevel(lvl){
+    setCurrent({
+      ...lvl,
+      amount:0,
+      movesLeft:lvl.moves
+    });
+    setScreen("game");
+  }
+
+  function saveStars(id,stars){
+    progress[id]=Math.max(progress[id]||0,stars);
+    localStorage.setItem("progress",JSON.stringify(progress));
+  }
+
+  if(screen==="home"){
+    return(
+      <div className="app">
+        <h2>🪙 Coin Logic</h2>
+        <div className="level-grid">
+          {levels.map((l,i)=>{
+            const unlocked = i===0 || progress[levels[i-1].id];
+            return(
+              <div key={l.id}
+                className={`level ${!unlocked?"locked":""}`}
+                onClick={()=>startLevel(l)}>
+                <div>Level {l.id}</div>
+                <div className="stars">
+                  {"⭐".repeat(progress[l.id]||0)}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
+  const used = current.moves - current.movesLeft;
+  const starPercent = (used/current.moves)*100;
+
+  function tapCoin(val){
+    if(current.movesLeft<=0) return;
+
+    const amt = current.amount + val;
+    const movesLeft = current.movesLeft -1;
+
+    const updated={...current,amount:amt,movesLeft};
+    setCurrent(updated);
+
+    if(amt===current.target){
+      const stars = movesLeft>=2?3:movesLeft===1?2:1;
+      saveStars(current.id,stars);
+      alert(`Level Complete ⭐${stars}`);
+      setScreen("home");
+    }
+    if(movesLeft===0 && amt!==current.target){
+      alert("Failed!");
+      setScreen("home");
+    }
+  }
+
+  return(
+    <div className="app">
+      <div className="game">
+        <div className="top">
+          <div>Target ₹{current.target}</div>
+          <div>Moves {current.movesLeft}</div>
+        </div>
+
+        <div className="progress">
+          <div className="bar" style={{width:`${100-starPercent}%`}}></div>
+        </div>
+
+        <div className="amount">₹{current.amount}</div>
+
+        <div className="coins">
+          {current.coins.map((c,i)=>(
+            <div key={i} className="coin" onClick={()=>tapCoin(c)}>
+              +{c}
+            </div>
+          ))}
+        </div>
+
+        <div className="footer">
+          <button onClick={()=>setScreen("home")}>Exit</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+
+</script>
+</body>
+</html>
